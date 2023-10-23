@@ -10,13 +10,13 @@
 #include "Slice.h"
 #include "WipeScriptConfig.h"
 #include "communication/Communication.h" //To send layer view data.
+#include "plugins/slots.h"
 #include "settings/types/LayerIndex.h"
 #include "utils/Date.h"
 #include "utils/string.h" // MMtoStream, PrecisionedDouble
-#include "plugins/slots.h"
 
-#include <range/v3/view/transform.hpp>
 #include <fmt/ranges.h>
+#include <range/v3/view/transform.hpp>
 #include <spdlog/spdlog.h>
 
 #include <assert.h>
@@ -208,7 +208,12 @@ std::string GCodeExport::getFileHeader(
     std::ostringstream prefix;
 
     const size_t extruder_count = Application::getInstance().current_slice->scene.extruders.size();
-    auto used_plugins = slots::instance().getConnectedPluginInfo() | ranges::views::transform([](const auto& plugin_info){ return fmt::format("{}: {}", plugin_info.plugin_name, plugin_info.plugin_version); });
+    auto used_plugins = slots::instance().getConnectedPluginInfo()
+                      | ranges::views::transform(
+                            [](const auto& plugin_info)
+                            {
+                                return fmt::format("{}: {}", plugin_info.plugin_name, plugin_info.plugin_version);
+                            });
     switch (flavor)
     {
     case EGCodeFlavor::GRIFFIN:
