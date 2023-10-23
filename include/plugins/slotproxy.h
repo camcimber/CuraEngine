@@ -104,6 +104,15 @@ public:
             plugin_.value().template broadcast<S>(std::forward<decltype(args)>(args)...);
         }
     }
+
+    [[nodiscard]] const std::optional<plugin_metadata> getPluginInfo() const noexcept
+    {
+        if (plugin_.has_value())
+        {
+            return plugin_->getPluginInfo();
+        }
+        return std::nullopt;
+    }
 };
 
 } // namespace cura::plugins

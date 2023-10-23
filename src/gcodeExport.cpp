@@ -13,7 +13,10 @@
 #include "settings/types/LayerIndex.h"
 #include "utils/Date.h"
 #include "utils/string.h" // MMtoStream, PrecisionedDouble
+#include "plugins/slots.h"
 
+#include <range/v3/view/transform.hpp>
+#include <fmt/ranges.h>
 #include <spdlog/spdlog.h>
 
 #include <assert.h>
@@ -205,6 +208,7 @@ std::string GCodeExport::getFileHeader(
     std::ostringstream prefix;
 
     const size_t extruder_count = Application::getInstance().current_slice->scene.extruders.size();
+    auto used_plugins = slots::instance().getConnectedPluginInfo() | ranges::views::transform([](const auto& plugin_info){ return fmt::format("{}: {}", plugin_info.plugin_name, plugin_info.plugin_version); });
     switch (flavor)
     {
     case EGCodeFlavor::GRIFFIN:
@@ -262,6 +266,7 @@ std::string GCodeExport::getFileHeader(
         prefix << ";PRINT.SIZE.MAX.Y:" << INT2MM(total_bounding_box.max.y) << new_line;
         prefix << ";PRINT.SIZE.MAX.Z:" << INT2MM(total_bounding_box.max.z) << new_line;
         prefix << ";SLICE_UUID:" << slice_uuid_ << new_line;
+        prefix << fmt::format(";ENGINE_PLUGINS:{}{}", used_plugins, new_line);
         prefix << ";END_OF_HEADER" << new_line;
         break;
     default:
@@ -309,6 +314,7 @@ std::string GCodeExport::getFileHeader(
         prefix << ";MAXX:" << INT2MM(total_bounding_box.max.x) << new_line;
         prefix << ";MAXY:" << INT2MM(total_bounding_box.max.y) << new_line;
         prefix << ";MAXZ:" << INT2MM(total_bounding_box.max.z) << new_line;
+        prefix << fmt::format(";ENGINE_PLUGINS:{}{}", used_plugins, new_line);
     }
 
     return prefix.str();

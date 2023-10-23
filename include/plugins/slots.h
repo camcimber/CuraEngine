@@ -21,6 +21,13 @@
 #include "utils/polygon.h"
 #include "utils/types/char_range_literal.h"
 
+#include <range/v3/view/any_view.hpp>
+#include <range/v3/view/concat.hpp>
+#include <range/v3/view/join.hpp>
+#include <range/v3/view/remove_if.hpp>
+#include <range/v3/view/single.hpp>
+#include <range/v3/view/transform.hpp>
+
 #include <exception>
 #include <memory>
 #include <tuple>
@@ -132,6 +139,21 @@ public:
     constexpr void broadcast([[maybe_unused]] auto&&... args) noexcept
     {
     } // Base case, do nothing
+
+    ranges::any_view<plugin_metadata> getConnectedPluginInfo()
+    {
+        return ranges::views::single(std::optional<plugin_metadata>{ std::nullopt })
+             | ranges::views::remove_if(
+                   [](const auto& plugin_info)
+                   {
+                       return ! plugin_info.has_value();
+                   })
+             | ranges::views::transform(
+                   [](const auto& plugin_info)
+                   {
+                       return plugin_info.value();
+                   });
+    }
 };
 
 template<typename T, typename... Types, template<typename> class Unit>
@@ -177,6 +199,22 @@ public:
     {
         value_.proxy.template broadcast<S>(std::forward<decltype(args)>(args)...);
         Base::template broadcast<S>(std::forward<decltype(args)>(args)...);
+    }
+
+    ranges::any_view<plugin_metadata> getConnectedPluginInfo()
+    {
+        ranges::any_view<plugin_metadata> plugin_info_view = ranges::views::single(value_.proxy.getPluginInfo())
+                                                           | ranges::views::remove_if(
+                                                                 [](const auto& plugin_info)
+                                                                 {
+                                                                     return ! plugin_info.has_value();
+                                                                 })
+                                                           | ranges::views::transform(
+                                                                 [](const auto& plugin_info)
+                                                                 {
+                                                                     return plugin_info.value();
+                                                                 });
+        return ranges::views::concat(Base::getConnectedPluginInfo(), plugin_info_view);
     }
 
 protected:

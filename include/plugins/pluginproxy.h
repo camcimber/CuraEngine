@@ -165,6 +165,11 @@ public:
     }
     ~PluginProxy() = default;
 
+    [[nodiscard]] const std::optional<plugin_metadata>& getPluginInfo() const noexcept
+    {
+        return plugin_info_;
+    }
+
     value_type generate(auto&&... args)
     {
         agrpc::GrpcContext grpc_context;
